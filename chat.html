@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 400px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 5px 0;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .sent {
+            background: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+        .received {
+            background: #eaeaea;
+            color: black;
+            align-self: flex-start;
+        }
+        .bot {
+            background: #28a745;
+            color: white;
+            align-self: flex-start;
+        }
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            background: #fff;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        .chat-input button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 5px;
+        }
+        .chat-input button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Lost & Found Chat</div>
+        <div id="chat-box" class="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatId = "12345"; 
+        const chatSocket = new WebSocket(`ws://localhost:8000/ws/chat/${chatId}`);
+
+        chatSocket.onopen = function () {
+            console.log("WebSocket connected.");
+        };
+
+        chatSocket.onmessage = function (event) {
+            appendMessage(event.data, "received");
+        };
+
+        function sendMessage() {
+            let input = document.getElementById("message-input");
+            let message = input.value.trim();
+            if (message !== "") {
+                appendMessage(`You: ${message}`, "sent"); // Show the sent message
+                chatSocket.send(message);
+
+                // If message starts with "/bot", request AI response
+                if (message.startsWith("/bot ")) {
+                    fetch(`/bot-response?message=${encodeURIComponent(message.substring(5))}`)
+                        .then(response => response.json())
+                        .then(data => appendMessage(`Bot: ${data.response}`, "bot"));
+                }
+
+                input.value = ""; // Clear input
+            }
+        }
+
+        function appendMessage(message, type) {
+            let chatBox = document.getElementById("chat-box");
+            let msgElement = document.createElement("div");
+            msgElement.textContent = message;
+            msgElement.classList.add("message", type);
+            chatBox.appendChild(msgElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
