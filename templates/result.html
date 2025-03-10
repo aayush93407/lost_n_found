@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matching Result</title>
+    <style>
+        body {
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            text-align: center;
+            width: 600px;
+        }
+
+        h2 {
+            color: white;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 3px solid grey;
+        }
+
+        .details {
+            text-align: left;
+            margin-top: 20px;
+            color: white;
+        }
+
+        .details p {
+            font-size: 16px;
+            color: lightgrey;
+            margin: 5px 0;
+        }
+
+        strong {
+            color: white;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: orange;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: darkorange;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Best Match Found</h2>
+        <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Uploaded Image">
+        <div class="details">
+            <p><strong>Item Name:</strong> {{ item_name }}</p>
+            <p><strong>Person Name:</strong> {{person_name}} </p>
+            <p><strong>Description:</strong> {{ description }}</p>
+            <p><strong>Location:</strong> {{ location }}</p>
+            <p><strong>Owner Contact:</strong> {{ owner_contact }}</p>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn">Upload Another</a>
+    </div>
+</body>
+</html>
