@@ -5,20 +5,18 @@ from PIL import Image
 import pandas as pd
 import numpy as np
 import os
+import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Load pre-trained ResNet model  
+# Load pre-trained ResNet50 model
 resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
 resnet = torch.nn.Sequential(*list(resnet.children())[:-1])
 resnet.eval()
 
-# Image preprocessing function 
+# Preprocessing
 def preprocess_image(image_path):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -28,23 +26,16 @@ def preprocess_image(image_path):
     image = Image.open(image_path).convert("RGB")
     return transform(image).unsqueeze(0)
 
-# Feature extraction function 
+# Feature extraction
 def extract_features(image_path):
     image_tensor = preprocess_image(image_path)
     with torch.no_grad():
         features = resnet(image_tensor)
     return features.squeeze().numpy().flatten()
 
-# Load dataset and cache features
-csv_path = "lost_items_dataset.csv"
-df = pd.read_csv(csv_path)
-
-def prepare_features():
-    if 'features' not in df.columns:
-        df['features'] = df['image_path'].apply(lambda x: extract_features(x) if os.path.exists(x) else None)
-        df.dropna(inplace=True)
-
-prepare_features()
+# Load DataFrame with features from pickle
+features_path = "features.pkl"
+df = pd.read_pickle(features_path)
 
 # Function to find best match
 def find_best_match(found_image_path):
@@ -54,8 +45,8 @@ def find_best_match(found_image_path):
     best_match_idx = np.argmax(similarities)
     return df.iloc[best_match_idx]
 
-# Routes
-@app.route("/")
+# Flask Routes
+@app.route("/", methods=["GET"])
 def index():
     return render_template("upload.html")
 
@@ -69,12 +60,13 @@ def match():
         return redirect(request.url)
 
     if file:
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        os.makedirs("static/uploads", exist_ok=True)
+        file_path = os.path.join("static/uploads", file.filename)
         file.save(file_path)
-
+        
         best_match = find_best_match(file_path)
-
-        return render_template("result.html",
+        
+        return render_template("result.html", 
                                image=file.filename,
                                item_name=best_match["item_name"],
                                person_name=best_match["person_name"],
@@ -83,6 +75,7 @@ def match():
                                owner_contact=best_match["owner_contact"])
     return redirect(url_for("index"))
 
+# Production-safe entrypoint
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
